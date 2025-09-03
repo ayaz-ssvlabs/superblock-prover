@@ -1,12 +1,14 @@
-//! An end-to-end example of using the SP1 SDK to generate a proof of superblock transition verification.
+//! An end-to-end example of using the SP1 SDK to generate proofs of superblock transition verification.
 //!
-//! You can run this script using the following command:
+//! You can run this script using one of the following commands:
 //! ```shell
 //! RUST_LOG=info cargo run --release -- --execute
 //! ```
-//! or
 //! ```shell
 //! RUST_LOG=info cargo run --release -- --prove
+//! ```
+//! ```shell
+//! RUST_LOG=info cargo run --release -- --groth16
 //! ```
 
 use alloy_sol_types::SolType;
@@ -26,6 +28,9 @@ struct Args {
 
     #[arg(long)]
     prove: bool,
+
+    #[arg(long)]
+    groth16: bool,
 }
 
 /// Create sample superblock data for testing
@@ -95,8 +100,10 @@ fn main() {
     // Parse the command line arguments.
     let args = Args::parse();
 
-    if args.execute == args.prove {
-        eprintln!("Error: You must specify either --execute or --prove");
+    // Validate argument combinations
+    let actions_count = [args.execute, args.prove, args.groth16].iter().filter(|&&x| x).count();
+    if actions_count != 1 {
+        eprintln!("Error: You must specify exactly one of --execute, --prove, or --groth16");
         std::process::exit(1);
     }
 
@@ -153,20 +160,55 @@ fn main() {
 
         // Record the number of cycles executed.
         println!("Number of cycles: {}", report.total_instruction_count());
-    } else {
-        // Setup the program for proving.
+    } else if args.prove {
+        // Setup the program for proving (STARK proof).
         let (pk, vk) = client.setup(SUPERBLOCK_ELF);
 
-        // Generate the proof
+        // Generate the STARK proof
         let proof = client
             .prove(&pk, &stdin)
             .run()
-            .expect("failed to generate proof");
+            .expect("failed to generate STARK proof");
 
-        println!("Successfully generated proof!");
+        println!("Successfully generated STARK proof!");
 
         // Verify the proof.
-        client.verify(&proof, &vk).expect("failed to verify proof");
-        println!("Successfully verified proof!");
+        client.verify(&proof, &vk).expect("failed to verify STARK proof");
+        println!("Successfully verified STARK proof!");
+    } else if args.groth16 {
+        // Setup the program for Groth16 proving.
+        let (pk, vk) = client.setup(SUPERBLOCK_ELF);
+
+        // Generate the Groth16 proof
+        println!("Generating Groth16 proof (this may take several minutes)...");
+        let proof = client
+            .prove(&pk, &stdin)
+            .groth16()
+            .run()
+            .expect("failed to generate Groth16 proof");
+
+        println!("Successfully generated Groth16 proof!");
+        println!("Proof size: {} bytes", proof.bytes().len());
+
+        // Verify the Groth16 proof.
+        client.verify(&proof, &vk).expect("failed to verify Groth16 proof");
+        println!("Successfully verified Groth16 proof!");
+
+        // Extract and display public values
+        let decoded = PublicValuesStruct::abi_decode(proof.public_values.as_slice()).unwrap();
+        let PublicValuesStruct { 
+            prev_superblock_hash,
+            new_superblock_hash,
+            prev_number,
+            new_number,
+            is_valid_transition,
+        } = decoded;
+
+        println!("\nPublic Values from Groth16 proof:");
+        println!("Previous superblock hash: 0x{}", hex::encode(prev_superblock_hash));
+        println!("New superblock hash: 0x{}", hex::encode(new_superblock_hash));
+        println!("Previous number: {}", prev_number);
+        println!("New number: {}", new_number);
+        println!("Is valid transition: {}", is_valid_transition);
     }
 }
