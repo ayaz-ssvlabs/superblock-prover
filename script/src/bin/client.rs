@@ -171,7 +171,7 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
                                             .filter_map(|v| v.as_u64().map(|n| n as u8))
                                             .collect();
                                         let hex_str = hex::encode(&bytes);
-                                        println!("     Proof (full hex): {}", hex_str);
+                                        println!("     Proof: {}", hex_str);
                                     }
                                 }
                             }
@@ -213,6 +213,5 @@ async fn main() -> Result<(), Box<dyn std::error::Error>> {
         println!("   Error: {}", error_text);
     }
 
-    println!("\n[DONE] Client test completed!");
     Ok(())
 }

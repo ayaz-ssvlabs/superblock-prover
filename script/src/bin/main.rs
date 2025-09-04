@@ -309,16 +309,17 @@ async fn process_proof_job(
                 // Log additional details about the completed proof
                 if let Some(proof_bytes) = &proof_result.proof {
                     let proof_hex = hex::encode(proof_bytes);
-                    info!("Proof hex (full): {}", proof_hex);
+                    info!("Proof: {}", proof_hex);
                     info!("Proof size: {} bytes", proof_bytes.len());
                 }
                 
-                if let Some(cycles) = proof_result.cycles {
-                    info!("Execution cycles: {}", cycles);
-                }
+                // if let Some(cycles) = proof_result.cycles {
+                //     info!("Execution cycles: {}", cycles);
+                // }
                 
                 if let Some(time_ms) = proof_result.proving_time_ms {
-                    info!("Proving time: {}ms", time_ms);
+                    let time_seconds = time_ms as f64 / 1000.0;
+                    info!("Proving time: {:.2}s", time_seconds);
                 }
             }
             Err(error_msg) => {
