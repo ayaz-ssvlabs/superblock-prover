@@ -117,7 +117,10 @@ fn main() {
         std::process::exit(1);
     }
 
-    // Setup the prover client.
+    // Setup the prover client using SP1_PROVER environment variable (defaults to "cpu")
+    let sp1_prover = std::env::var("SP1_PROVER").unwrap_or_else(|_| "cpu".to_string());
+    println!("Using SP1_PROVER: {}", sp1_prover);
+    
     let client = ProverClient::from_env();
 
     // Create sample superblock data
