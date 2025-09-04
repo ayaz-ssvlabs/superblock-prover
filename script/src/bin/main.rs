@@ -10,11 +10,15 @@
 //! ```shell
 //! RUST_LOG=info cargo run --release -- --groth16
 //! ```
+//! ```shell
+//! cargo run --release -- --groth16 --verbose
+//! ```
 
 use alloy_sol_types::SolType;
 use clap::Parser;
 use superblock_lib::{PublicValuesStruct, Superblock, L2Block};
 use sp1_sdk::{include_elf, ProverClient, SP1Stdin};
+use std::time::Instant;
 
 /// The ELF (executable and linkable format) file for the Succinct RISC-V zkVM.
 pub const SUPERBLOCK_ELF: &[u8] = include_elf!("superblock-program");
@@ -31,6 +35,9 @@ struct Args {
 
     #[arg(long)]
     groth16: bool,
+
+    #[arg(long)]
+    verbose: bool,
 }
 
 /// Create sample superblock data for testing
@@ -93,12 +100,15 @@ fn create_sample_superblocks() -> (Superblock, Superblock) {
 }
 
 fn main() {
-    // Setup the logger.
+    // Parse the command line arguments first to check for verbose flag.
+    let args = Args::parse();
+    
+    // Setup the logger with appropriate level.
+    if args.verbose {
+        std::env::set_var("RUST_LOG", "debug");
+    }
     sp1_sdk::utils::setup_logger();
     dotenv::dotenv().ok();
-
-    // Parse the command line arguments.
-    let args = Args::parse();
 
     // Validate argument combinations
     let actions_count = [args.execute, args.prove, args.groth16].iter().filter(|&&x| x).count();
@@ -165,34 +175,51 @@ fn main() {
         let (pk, vk) = client.setup(SUPERBLOCK_ELF);
 
         // Generate the STARK proof
+        println!("Generating STARK proof...");
+        let start_time = Instant::now();
         let proof = client
             .prove(&pk, &stdin)
             .run()
             .expect("failed to generate STARK proof");
+        let proof_time = start_time.elapsed();
 
         println!("Successfully generated STARK proof!");
+        println!("Proof generation time: {:.2?}", proof_time);
+        println!("Proof size: {} bytes", proof.bytes().len());
 
         // Verify the proof.
+        let verify_start = Instant::now();
         client.verify(&proof, &vk).expect("failed to verify STARK proof");
+        let verify_time = verify_start.elapsed();
         println!("Successfully verified STARK proof!");
+        println!("Verification time: {:.2?}", verify_time);
     } else if args.groth16 {
         // Setup the program for Groth16 proving.
         let (pk, vk) = client.setup(SUPERBLOCK_ELF);
 
         // Generate the Groth16 proof
         println!("Generating Groth16 proof (this may take several minutes)...");
+        let start_time = Instant::now();
         let proof = client
             .prove(&pk, &stdin)
             .groth16()
             .run()
             .expect("failed to generate Groth16 proof");
+        let proof_time = start_time.elapsed();
 
         println!("Successfully generated Groth16 proof!");
+        println!("Proof generation time: {:.2?}", proof_time);
         println!("Proof size: {} bytes", proof.bytes().len());
 
+        // Print the proof in hex format
+        println!("Proof (hex): 0x{}", hex::encode(proof.bytes()));
+
         // Verify the Groth16 proof.
+        let verify_start = Instant::now();
         client.verify(&proof, &vk).expect("failed to verify Groth16 proof");
+        let verify_time = verify_start.elapsed();
         println!("Successfully verified Groth16 proof!");
+        println!("Verification time: {:.2?}", verify_time);
 
         // Extract and display public values
         let decoded = PublicValuesStruct::abi_decode(proof.public_values.as_slice()).unwrap();

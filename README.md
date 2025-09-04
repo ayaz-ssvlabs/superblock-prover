@@ -50,6 +50,21 @@ cargo run --release --bin superblock -- --groth16
 
 Note: Groth16 proof generation takes longer than STARK proofs but produces much smaller, constant-size proofs (typically ~200 bytes) with very fast verification suitable for smart contracts.
 
+### Debug Logging
+
+To see detailed internal SP1 processing information, you can use the `--verbose` flag or set the `RUST_LOG` environment variable:
+
+```sh
+# Using verbose flag (recommended)
+cargo run --release --bin superblock -- --groth16 --verbose
+
+# Using environment variable
+RUST_LOG=debug cargo run --release --bin superblock -- --groth16
+
+# Targeted logging for specific components
+RUST_LOG="shrink=debug,wrap_bn254=debug" cargo run --release --bin superblock -- --groth16
+```
+
 ## Superblock Verification Features
 
 This implementation includes:
