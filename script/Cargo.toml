@@ -8,6 +8,10 @@ default-run = "superblock"
 name = "superblock"
 path = "src/bin/main.rs"
 
+[[bin]]
+name = "client"
+path = "src/bin/client.rs"
+
 # Temporarily disabled - need to update for superblock structure
 # [[bin]]
 # name = "evm"
@@ -28,6 +32,14 @@ hex = "0.4.3"
 alloy-sol-types = { workspace = true }
 superblock-lib = { path = "../lib" }
 dotenv = "0.15.0"
+axum = "0.7"
+tokio = { version = "1.0", features = ["full"] }
+tower = "0.4"
+tower-http = { version = "0.5", features = ["cors"] }
+reqwest = { version = "0.12", features = ["json"] }
+chrono = { version = "0.4", features = ["serde"] }
+uuid = { version = "1.0", features = ["v4", "serde"] }
+dashmap = "6.0"
 
 [build-dependencies]
 sp1-build = "5.0.8"

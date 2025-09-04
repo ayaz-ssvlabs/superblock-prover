@@ -30,15 +30,6 @@ This will execute the superblock transition verification and display the results
 - Verification of transition rules (number increment, parent hash matching, Merkle root validation)
 - Confirmation of valid state transition
 
-### Generate an SP1 Core Proof
-
-To generate an SP1 [core proof](https://docs.succinct.xyz/docs/sp1/generating-proofs/proof-types#core-default) (STARK) for superblock verification:
-
-```sh
-cd script
-cargo run --release --bin superblock -- --prove
-```
-
 ### Generate a Groth16 Proof
 
 To generate a Groth16 proof for superblock verification (ideal for on-chain verification due to constant proof size and fast verification):
