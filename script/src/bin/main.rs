@@ -309,7 +309,7 @@ async fn process_proof_job(
                 // Log additional details about the completed proof
                 if let Some(proof_bytes) = &proof_result.proof {
                     let proof_hex = hex::encode(proof_bytes);
-                    info!("Proof hex (first 64 chars): {}...", &proof_hex[..proof_hex.len().min(64)]);
+                    info!("Proof hex (full): {}", proof_hex);
                     info!("Proof size: {} bytes", proof_bytes.len());
                 }
                 
